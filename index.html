@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DomusDocs - Archivio & Gestione Documentale Case</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              800: '#0c4a6e',
+              900: '#082f49'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="h-full flex flex-col text-slate-800 antialiased font-sans">
+
+  <!-- Header -->
+  <header class="bg-brand-900 text-white border-b border-brand-800 sticky top-0 z-30 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center shadow-inner text-white text-lg">
+          <i class="fa-solid fa-folder-tree"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight">DomusDocs</h1>
+          <p class="text-xs text-sky-200">Archivio Documenti Immobili & Scadenzario</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button onclick="openBackupModal()" class="px-3 py-1.5 text-xs font-medium bg-brand-800 hover:bg-brand-700 text-sky-100 rounded-lg transition-colors border border-brand-700 flex items-center gap-1.5 shadow-sm">
+          <i class="fa-solid fa-database"></i> Backup & Ripristino
+        </button>
+        <button onclick="openNewPropertyModal()" class="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg transition-colors shadow-sm flex items-center gap-1.5">
+          <i class="fa-solid fa-plus"></i> Nuova Casa
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-6">
+
+    <!-- Sidebar / Selettore Immobili -->
+    <aside class="w-full md:w-80 flex-shrink-0 flex flex-col gap-4">
+      
+      <!-- Box Riepilogo Scadenze -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center justify-between">
+          <span>Stato Scadenze Globali</span>
+          <i class="fa-regular fa-bell text-slate-400"></i>
+        </h2>
+        <div class="grid grid-cols-3 gap-2 text-center text-xs">
+          <div class="p-2 rounded-xl bg-rose-50 border border-rose-100">
+            <span id="badge-scaduti" class="block text-lg font-bold text-rose-700">0</span>
+            <span class="text-[11px] text-rose-600 font-medium">Scaduti</span>
+          </div>
+          <div class="p-2 rounded-xl bg-amber-50 border border-amber-100">
+            <span id="badge-in-scadenza" class="block text-lg font-bold text-amber-700">0</span>
+            <span class="text-[11px] text-amber-600 font-medium">≤ 30 gg</span>
+          </div>
+          <div class="p-2 rounded-xl bg-emerald-50 border border-emerald-100">
+            <span id="badge-ok" class="block text-lg font-bold text-emerald-700">0</span>
+            <span class="text-[11px] text-emerald-600 font-medium">In regola</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Elenco Case -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex-1 flex flex-col">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">I Miei Immobili</h2>
+          <span id="count-properties" class="text-xs font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">5</span>
+        </div>
+        <div id="property-list" class="space-y-2 overflow-y-auto max-h-[550px] custom-scrollbar pr-1">
+          <!-- Popolato dinamicamente -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- Contenuto Principale / Dettaglio Fascicolo Casa -->
+    <section class="flex-1 flex flex-col min-w-0">
+      <div id="property-detail-container" class="space-y-6">
+        <!-- Renderizzato via JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal: Nuova Casa / Modifica Casa -->
+  <div id="property-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in duration-150">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 id="prop-modal-title" class="font-bold text-slate-800 text-base">Aggiungi Nuovo Immobile</h3>
+        <button onclick="closeModal('property-modal')" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <form id="prop-form" onsubmit="handleSaveProperty(event)" class="mt-4 space-y-4">
+        <input type="hidden" id="prop-id">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Nome Identificativo Casa *</label>
+          <input type="text" id="prop-name" required placeholder="es. Casa Contessa, Casa Paese..." class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Indirizzo Completo</label>
+          <input type="text" id="prop-address" placeholder="es. Via/Contrada..." class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Stato Immobile</label>
+            <select id="prop-status" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+              <option value="Affittato">Affittato</option>
+              <option value="Libero">Libero / Sfitto</option>
+              <option value="Uso Personale">Uso Personale</option>
+              <option value="Ristrutturazione">In Ristrutturazione</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Dati Catastali</label>
+            <input type="text" id="prop-cadastral" placeholder="Fg. ..., Part. ..., Sub. ..." class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Note Aggiuntive</label>
+          <textarea id="prop-notes" rows="2" placeholder="Dettagli utenze, contatori, chiavi..." class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('property-modal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Annulla</button>
+          <button type="submit" class="px-4 py-2 text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-xl shadow-sm">Salva Casa</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Nuovo Documento -->
+  <div id="doc-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-800 text-base">Archivia Scansione Documento</h3>
+        <button onclick="closeModal('doc-modal')" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <form id="doc-form" onsubmit="handleSaveDocument(event)" class="mt-4 space-y-4">
+        <input type="hidden" id="doc-property-id">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Sezione / Categoria Documento *</label>
+          <select id="doc-category" required class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+            <option value="Catasto & Proprietà">1. Catasto & Proprietà (Atto compravendita, Rogito, Planimetria, Visura)</option>
+            <option value="Attestati & Conformità">2. Attestati & Conformità (APE, Certificati Impianti, Gas, Agibilità)</option>
+            <option value="Contratti & Locazioni">3. Contratti & Locazioni (Contratto fitto, Ricevuta RLI, Verbale consegna)</option>
+            <option value="Fisco & Tasse">4. Fisco & Tasse (IMU, TARI, Modello Redditi, Ricevute Registro)</option>
+            <option value="Condominio">5. Condominio (Regolamento, Tabelle Millesimali, Verbali, Quote)</option>
+            <option value="Manutenzioni & Spese">6. Manutenzioni & Spese (Bollino Caldaia, Fatture lavori, Garanzie)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Titolo / Oggetto Documento *</label>
+          <input type="text" id="doc-title" required placeholder="es. Atto compravendita rogito, Planimetria catastale, APE..." class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Data Documento</label>
+            <input type="date" id="doc-date" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Data di Scadenza (Se applicabile)</label>
+            <input type="date" id="doc-expiry" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none">
+            <p class="text-[10px] text-slate-400 mt-0.5">Genera avviso automatico</p>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">File Scansione (PDF, JPG, PNG) *</label>
+          <input type="file" id="doc-file" required accept=".pdf,image/jpeg,image/png,image/webp" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 border border-slate-200 rounded-xl p-1 cursor-pointer">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Note o Dettagli</label>
+          <input type="text" id="doc-notes" placeholder="Note specifiche, protocollo, importo..." class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 focus:ring-2 focus:ring-brand-500 outline-none">
+        </div>
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('doc-modal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Annulla</button>
+          <button type="submit" class="px-4 py-2 text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-xl shadow-sm">Carica e Salva</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Anteprima Documento -->
+  <div id="preview-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex flex-col p-4 sm:p-6">
+    <div class="flex items-center justify-between pb-3 text-white max-w-6xl w-full mx-auto">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid fa-file-pdf text-rose-400 text-xl" id="preview-icon"></i>
+        <div>
+          <h3 id="preview-title" class="font-bold text-sm sm:text-base text-white">Titolo File</h3>
+          <p id="preview-meta" class="text-xs text-slate-300">Dettagli file</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a id="preview-download-btn" href="#" download="" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors">
+          <i class="fa-solid fa-download"></i> Scarica
+        </a>
+        <button onclick="closeModal('preview-modal')" class="px-3 py-1.5 bg-rose-600/80 hover:bg-rose-600 text-white rounded-lg text-xs font-semibold transition-colors">
+          <i class="fa-solid fa-xmark"></i> Chiudi
+        </button>
+      </div>
+    </div>
+    <div class="flex-1 max-w-6xl w-full mx-auto bg-slate-900 rounded-2xl overflow-hidden mt-2 relative border border-slate-800 flex items-center justify-center">
+      <iframe id="preview-iframe" class="w-full h-full border-0 hidden"></iframe>
+      <img id="preview-img" class="max-w-full max-h-full object-contain hidden" alt="Anteprima">
+      <div id="preview-fallback" class="text-center p-6 text-slate-400 hidden">
+        <i class="fa-regular fa-file-lines text-5xl mb-3 text-slate-500"></i>
+        <p class="text-sm">Impossibile mostrare l'anteprima diretta.</p>
+        <p class="text-xs text-slate-500 mt-1">Usa il pulsante in alto per scaricare il file.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Backup & Restore -->
+  <div id="backup-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-800 text-base">Backup & Salvaguardia Dati</h3>
+        <button onclick="closeModal('backup-modal')" class="text-slate-400 hover:text-slate-600">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div class="mt-4 space-y-5">
+        <div class="p-3.5 bg-sky-50 rounded-xl border border-sky-100">
+          <h4 class="text-xs font-bold text-brand-900 flex items-center gap-1.5 mb-1">
+            <i class="fa-solid fa-shield-halved text-brand-600"></i> Esporta Backup (.json)
+          </h4>
+          <p class="text-[11px] text-sky-800 mb-3">Scarica un singolo file JSON con tutte le case, i metadati e i file delle scansioni incorporati. Perfetto per archivio sicuro su hard disk o chiavetta.</p>
+          <button onclick="exportAllData()" class="w-full py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-2">
+            <i class="fa-solid fa-file-export"></i> Scarica Backup (.json)
+          </button>
+        </div>
+
+        <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+          <h4 class="text-xs font-bold text-slate-800 flex items-center gap-1.5 mb-1">
+            <i class="fa-solid fa-upload text-slate-600"></i> Ripristina da Backup
+          </h4>
+          <p class="text-[11px] text-slate-600 mb-3">Seleziona un file JSON esportato precedentemente per ripristinare o importare i documenti.</p>
+          <input type="file" id="restore-file-input" accept=".json" onchange="handleRestoreData(event)" class="text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-200 file:text-slate-700 hover:file:bg-slate-300 w-full cursor-pointer">
+        </div>
+      </div>
+      <div class="mt-5 text-right">
+        <button type="button" onclick="closeModal('backup-modal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Chiudi</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript App Logic (IndexedDB Core) -->
+  <script>
+    const DB_NAME = 'DomusDocsDB';
+    const DB_VERSION = 2;
+    let db;
+
+    function initDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const database = e.target.result;
+          if (!database.objectStoreNames.contains('properties')) {
+            const propStore = database.createObjectStore('properties', { keyPath: 'id' });
+            propStore.createIndex('name', 'name', { unique: false });
+          }
+          if (!database.objectStoreNames.contains('documents')) {
+            const docStore = database.createObjectStore('documents', { keyPath: 'id' });
+            docStore.createIndex('propertyId', 'propertyId', { unique: false });
+            docStore.createIndex('category', 'category', { unique: false });
+            docStore.createIndex('expiryDate', 'expiryDate', { unique: false });
+          }
+        };
+        req.onsuccess = (e) => {
+          db = e.target.result;
+          resolve(db);
+        };
+        req.onerror = (e) => reject(e.target.error);
+      });
+    }
+
+    function dbGetAll(storeName) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([storeName], 'readonly');
+        const store = tx.objectStore(storeName);
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function dbPut(storeName, item) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([storeName], 'readwrite');
+        const store = tx.objectStore(storeName);
+        const req = store.put(item);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    function dbDelete(storeName, key) {
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction([storeName], 'readwrite');
+        const store = tx.objectStore(storeName);
+        const req = store.delete(key);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    let activePropertyId = 'prop_contessa';
+    let currentFilterCategory = 'all';
+
+    const CATEGORIES = [
+      { id: 'Catasto & Proprietà', icon: 'fa-landmark', color: 'text-indigo-600 bg-indigo-50 border-indigo-200' },
+      { id: 'Attestati & Conformità', icon: 'fa-certificate', color: 'text-amber-600 bg-amber-50 border-amber-200' },
+      { id: 'Contratti & Locazioni', icon: 'fa-file-signature', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
+      { id: 'Fisco & Tasse', icon: 'fa-receipt', color: 'text-rose-600 bg-rose-50 border-rose-200' },
+      { id: 'Condominio', icon: 'fa-building', color: 'text-blue-600 bg-blue-50 border-blue-200' },
+      { id: 'Manutenzioni & Spese', icon: 'fa-screwdriver-wrench', color: 'text-cyan-600 bg-cyan-50 border-cyan-200' }
+    ];
+
+    const DEFAULT_PROPERTIES = [
+      {
+        id: 'prop_contessa',
+        name: 'Casa Contessa',
+        address: 'Contrada Contessa',
+        status: 'Uso Personale',
+        cadastral: 'Foglio ..., Particella ..., Sub ...',
+        notes: 'Immobile residenziale / uso personale.'
+      },
+      {
+        id: 'prop_paese',
+        name: 'Casa Paese',
+        address: 'Centro Storico / Paese',
+        status: 'Uso Personale',
+        cadastral: 'Foglio ..., Particella ..., Sub ...',
+        notes: 'Immobile in paese.'
+      },
+      {
+        id: 'prop_marina',
+        name: 'Casa Marina',
+        address: 'Zona Marina',
+        status: 'Affittato',
+        cadastral: 'Foglio ..., Particella ..., Sub ...',
+        notes: 'Immobile zona mare / locazione turistica o transitoria.'
+      },
+      {
+        id: 'prop_quattromiglia',
+        name: 'Casa Quattromiglia',
+        address: 'Quattromiglia',
+        status: 'Affittato',
+        cadastral: 'Foglio ..., Particella ..., Sub ...',
+        notes: 'Immobile locato (studenti / lavoratori).'
+      },
+      {
+        id: 'prop_villaggio_europa',
+        name: 'Casa Villaggio Europa',
+        address: 'Villaggio Europa',
+        status: 'Affittato',
+        cadastral: 'Foglio ..., Particella ..., Sub ...',
+        notes: 'Unità abitativa in complesso residenziale Villaggio Europa.'
+      }
+    ];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      await initDB();
+      const existingProps = await dbGetAll('properties');
+      
+      // Assicura la presenza esatta delle 5 case richieste
+      if (existingProps.length === 0) {
+        for (const p of DEFAULT_PROPERTIES) {
+          await dbPut('properties', p);
+        }
+      } else {
+        // Verifica se mancano quelle specifiche
+        for (const dp of DEFAULT_PROPERTIES) {
+          if (!existingProps.some(p => p.name.trim().toLowerCase() === dp.name.trim().toLowerCase())) {
+            await dbPut('properties', dp);
+          }
+        }
+      }
+      
+      await refreshAll();
+    });
+
+    async function refreshAll() {
+      const properties = await dbGetAll('properties');
+      const documents = await dbGetAll('documents');
+
+      updateDeadlinesCount(documents);
+      renderPropertyList(properties);
+
+      if (properties.length > 0) {
+        if (!activePropertyId || !properties.some(p => p.id === activePropertyId)) {
+          activePropertyId = properties[0].id;
+        }
+        renderActiveProperty(properties.find(p => p.id === activePropertyId), documents);
+      } else {
+        activePropertyId = null;
+        renderEmptyState();
+      }
+    }
+
+    function updateDeadlinesCount(docs) {
+      let expired = 0;
+      let soon = 0;
+      let ok = 0;
+      const now = new Date();
+
+      docs.forEach(d => {
+        if (!d.expiry) return;
+        const exp = new Date(d.expiry);
+        const diffDays = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) expired++;
+        else if (diffDays <= 30) soon++;
+        else ok++;
+      });
+
+      document.getElementById('badge-scaduti').textContent = expired;
+      document.getElementById('badge-in-scadenza').textContent = soon;
+      document.getElementById('badge-ok').textContent = ok;
+    }
+
+    function renderPropertyList(properties) {
+      const listEl = document.getElementById('property-list');
+      document.getElementById('count-properties').textContent = properties.length;
+      listEl.innerHTML = '';
+
+      if (properties.length === 0) {
+        listEl.innerHTML = '<div class="text-center py-8 text-xs text-slate-400">Nessuna casa inserita.</div>';
+        return;
+      }
+
+      properties.forEach(prop => {
+        const isActive = prop.id === activePropertyId;
+        const btn = document.createElement('div');
+        btn.className = `p-3.5 rounded-xl cursor-pointer border transition-all duration-150 relative ${
+          isActive 
+            ? 'bg-brand-50 border-brand-500 shadow-sm ring-1 ring-brand-500' 
+            : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+        }`;
+        
+        let statusColor = 'bg-slate-100 text-slate-600';
+        if (prop.status === 'Affittato') statusColor = 'bg-emerald-100 text-emerald-700';
+        if (prop.status === 'Libero') statusColor = 'bg-amber-100 text-amber-700';
+        if (prop.status === 'Uso Personale') statusColor = 'bg-sky-100 text-sky-700';
+
+        btn.onclick = () => {
+          activePropertyId = prop.id;
+          currentFilterCategory = 'all';
+          refreshAll();
+        };
+
+        btn.innerHTML = `
+          <div class="flex items-start justify-between">
+            <h4 class="font-bold text-xs sm:text-sm text-slate-900 leading-snug">${escapeHtml(prop.name)}</h4>
+            <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusColor}">${escapeHtml(prop.status || 'N/D')}</span>
+          </div>
+          <p class="text-[11px] text-slate-500 truncate mt-1"><i class="fa-solid fa-location-dot text-slate-400 mr-1"></i>${escapeHtml(prop.address || 'Nessun indirizzo')}</p>
+        `;
+        listEl.appendChild(btn);
+      });
+    }
+
+    function renderActiveProperty(property, allDocs) {
+      const container = document.getElementById('property-detail-container');
+      const propDocs = allDocs.filter(d => d.propertyId === property.id);
+
+      const filteredDocs = currentFilterCategory === 'all' 
+        ? propDocs 
+        : propDocs.filter(d => d.category === currentFilterCategory);
+
+      let categoryButtonsHtml = `
+        <button onclick="setFilterCategory('all')" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+          currentFilterCategory === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+        }">Tutti (${propDocs.length})</button>
+      `;
+
+      CATEGORIES.forEach(cat => {
+        const count = propDocs.filter(d => d.category === cat.id).length;
+        const isActive = currentFilterCategory === cat.id;
+        categoryButtonsHtml += `
+          <button onclick="setFilterCategory('${cat.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+            isActive ? 'bg-brand-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+          }">
+            <i class="fa-solid ${cat.icon} text-[10px]"></i>
+            ${cat.id} (${count})
+          </button>
+        `;
+      });
+
+      let docsCardsHtml = '';
+      if (filteredDocs.length === 0) {
+        docsCardsHtml = `
+          <div class="col-span-full text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300 p-6">
+            <i class="fa-regular fa-folder-open text-4xl text-slate-300 mb-2"></i>
+            <p class="text-sm font-semibold text-slate-600">Nessun documento in questa sezione per ${escapeHtml(property.name)}</p>
+            <p class="text-xs text-slate-400 mt-1">Clicca su "Aggiungi Documento" in alto per caricare la scansione (PDF o immagine).</p>
+          </div>
+        `;
+      } else {
+        filteredDocs.forEach(doc => {
+          const catMeta = CATEGORIES.find(c => c.id === doc.category) || { icon: 'fa-file', color: 'text-slate-600 bg-slate-50 border-slate-200' };
+          
+          let expiryBadge = '';
+          if (doc.expiry) {
+            const expDate = new Date(doc.expiry);
+            const now = new Date();
+            const diffDays = Math.ceil((expDate - now) / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) {
+              expiryBadge = `<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200"><i class="fa-solid fa-triangle-exclamation"></i> Scaduto il ${formatDate(doc.expiry)}</span>`;
+            } else if (diffDays <= 30) {
+              expiryBadge = `<span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200"><i class="fa-regular fa-clock"></i> Scade tra ${diffDays} gg</span>`;
+            } else {
+              expiryBadge = `<span class="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Scadenza: ${formatDate(doc.expiry)}</span>`;
+            }
+          }
+
+          const hasFile = !!doc.fileData;
+
+          docsCardsHtml += `
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+              <div>
+                <div class="flex items-start justify-between gap-2 mb-2">
+                  <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border ${catMeta.color}">
+                    <i class="fa-solid ${catMeta.icon} text-[10px]"></i> ${escapeHtml(doc.category)}
+                  </span>
+                  <button onclick="deleteDocument('${doc.id}')" title="Elimina documento" class="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors">
+                    <i class="fa-solid fa-trash-can text-xs"></i>
+                  </button>
+                </div>
+
+                <h4 class="font-bold text-sm text-slate-900 leading-snug line-clamp-2">${escapeHtml(doc.title)}</h4>
+                
+                ${doc.notes ? `<p class="text-xs text-slate-500 mt-1 line-clamp-2">${escapeHtml(doc.notes)}</p>` : ''}
+              </div>
+
+              <div class="pt-3 mt-3 border-t border-slate-100 space-y-2">
+                <div class="flex items-center justify-between text-[11px] text-slate-400">
+                  <span>Data: ${doc.date ? formatDate(doc.date) : 'N/D'}</span>
+                  ${expiryBadge}
+                </div>
+                
+                <div class="flex items-center gap-2 pt-1">
+                  ${hasFile ? `
+                    <button onclick="previewDoc('${doc.id}')" class="flex-1 py-1.5 px-3 bg-brand-50 hover:bg-brand-100 text-brand-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+                      <i class="fa-regular fa-eye"></i> Visualizza
+                    </button>
+                    <button onclick="downloadDocDirect('${doc.id}')" class="w-8 h-8 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs flex items-center justify-center transition-colors" title="Download">
+                      <i class="fa-solid fa-download"></i>
+                    </button>
+                  ` : `
+                    <div class="w-full text-center py-1.5 bg-slate-50 rounded-xl text-[11px] text-slate-400 italic">
+                      Scheda solo testo (scansione non allegata)
+                    </div>
+                  `}
+                </div>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      container.innerHTML = `
+        <!-- Scheda Anagrafica Casa -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-bold text-slate-900">${escapeHtml(property.name)}</h2>
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">${escapeHtml(property.status)}</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+                <i class="fa-solid fa-location-dot text-slate-400"></i> ${escapeHtml(property.address || 'Nessun indirizzo specificato')}
+              </p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="editProperty('${property.id}')" class="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors flex items-center gap-1.5">
+                <i class="fa-solid fa-pen text-slate-400"></i> Modifica Casa
+              </button>
+              <button onclick="openNewDocumentModal('${property.id}')" class="px-3.5 py-1.5 text-xs font-semibold bg-brand-600 hover:bg-brand-500 text-white rounded-xl shadow-sm transition-colors flex items-center gap-1.5">
+                <i class="fa-solid fa-upload"></i> Aggiungi Documento
+              </button>
+            </div>
+          </div>
+
+          <!-- Metadati Catastali & Note -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 text-xs">
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+              <span class="font-bold text-slate-500 block text-[10px] uppercase tracking-wider mb-1">Riferimenti Catastali</span>
+              <p class="text-slate-800 font-medium font-mono">${escapeHtml(property.cadastral || 'Dati catastali non inseriti')}</p>
+            </div>
+            <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+              <span class="font-bold text-slate-500 block text-[10px] uppercase tracking-wider mb-1">Note & Dettagli Operativi</span>
+              <p class="text-slate-700">${escapeHtml(property.notes || 'Nessuna nota.')}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtro Categorie Documenti -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-800">Fascicolo Documenti (${escapeHtml(property.name)})</h3>
+            <span class="text-xs text-slate-400">${filteredDocs.length} documenti visibili</span>
+          </div>
+          <div class="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
+            ${categoryButtonsHtml}
+          </div>
+        </div>
+
+        <!-- Griglia Documenti -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          ${docsCardsHtml}
+        </div>
+      `;
+    }
+
+    function renderEmptyState() {
+      document.getElementById('property-detail-container').innerHTML = `
+        <div class="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center">
+          <i class="fa-solid fa-house-chimney text-5xl text-slate-300 mb-3"></i>
+          <h3 class="text-base font-bold text-slate-700">Nessun immobile presente</h3>
+          <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Inizia aggiungendo la prima casa per cominciare ad archiviare i relativi documenti.</p>
+          <button onclick="openNewPropertyModal()" class="mt-4 px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-sm">
+            <i class="fa-solid fa-plus mr-1"></i> Aggiungi immobile
+          </button>
+        </div>
+      `;
+    }
+
+    function setFilterCategory(catId) {
+      currentFilterCategory = catId;
+      refreshAll();
+    }
+
+    function openNewPropertyModal() {
+      document.getElementById('prop-modal-title').textContent = 'Aggiungi Nuovo Immobile';
+      document.getElementById('prop-id').value = '';
+      document.getElementById('prop-name').value = '';
+      document.getElementById('prop-address').value = '';
+      document.getElementById('prop-status').value = 'Affittato';
+      document.getElementById('prop-cadastral').value = '';
+      document.getElementById('prop-notes').value = '';
+      openModal('property-modal');
+    }
+
+    async function editProperty(id) {
+      const props = await dbGetAll('properties');
+      const prop = props.find(p => p.id === id);
+      if (!prop) return;
+
+      document.getElementById('prop-modal-title').textContent = 'Modifica Immobile';
+      document.getElementById('prop-id').value = prop.id;
+      document.getElementById('prop-name').value = prop.name || '';
+      document.getElementById('prop-address').value = prop.address || '';
+      document.getElementById('prop-status').value = prop.status || 'Affittato';
+      document.getElementById('prop-cadastral').value = prop.cadastral || '';
+      document.getElementById('prop-notes').value = prop.notes || '';
+      openModal('property-modal');
+    }
+
+    async function handleSaveProperty(e) {
+      e.preventDefault();
+      const id = document.getElementById('prop-id').value || 'prop_' + Date.now();
+      const property = {
+        id: id,
+        name: document.getElementById('prop-name').value.trim(),
+        address: document.getElementById('prop-address').value.trim(),
+        status: document.getElementById('prop-status').value,
+        cadastral: document.getElementById('prop-cadastral').value.trim(),
+        notes: document.getElementById('prop-notes').value.trim()
+      };
+
+      await dbPut('properties', property);
+      activePropertyId = property.id;
+      closeModal('property-modal');
+      await refreshAll();
+    }
+
+    function openNewDocumentModal(propId) {
+      document.getElementById('doc-property-id').value = propId;
+      document.getElementById('doc-category').value = 'Catasto & Proprietà';
+      document.getElementById('doc-title').value = '';
+      document.getElementById('doc-date').value = new Date().toISOString().split('T')[0];
+      document.getElementById('doc-expiry').value = '';
+      document.getElementById('doc-notes').value = '';
+      document.getElementById('doc-file').value = '';
+      openModal('doc-modal');
+    }
+
+    async function handleSaveDocument(e) {
+      e.preventDefault();
+      const propId = document.getElementById('doc-property-id').value;
+      const fileInput = document.getElementById('doc-file');
+      
+      let fileData = null;
+      let fileName = '';
+
+      if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        fileName = file.name;
+        fileData = await readFileAsBase64(file);
+      }
+
+      const doc = {
+        id: 'doc_' + Date.now(),
+        propertyId: propId,
+        category: document.getElementById('doc-category').value,
+        title: document.getElementById('doc-title').value.trim(),
+        date: document.getElementById('doc-date').value,
+        expiry: document.getElementById('doc-expiry').value,
+        notes: document.getElementById('doc-notes').value.trim(),
+        fileName: fileName,
+        fileData: fileData
+      };
+
+      await dbPut('documents', doc);
+      closeModal('doc-modal');
+      await refreshAll();
+    }
+
+    async function deleteDocument(docId) {
+      if (!confirm('Sei sicuro di voler eliminare questo documento scansionato?')) return;
+      await dbDelete('documents', docId);
+      await refreshAll();
+    }
+
+    async function previewDoc(docId) {
+      const docs = await dbGetAll('documents');
+      const doc = docs.find(d => d.id === docId);
+      if (!doc || !doc.fileData) {
+        alert('File scansionato non disponibile per l'anteprima.');
+        return;
+      }
+
+      document.getElementById('preview-title').textContent = doc.title;
+      document.getElementById('preview-meta').textContent = `${doc.category} • ${doc.fileName || 'Documento'}`;
+      
+      const downloadBtn = document.getElementById('preview-download-btn');
+      downloadBtn.href = doc.fileData;
+      downloadBtn.download = doc.fileName || 'documento.pdf';
+
+      const iframe = document.getElementById('preview-iframe');
+      const img = document.getElementById('preview-img');
+      const fallback = document.getElementById('preview-fallback');
+
+      iframe.classList.add('hidden');
+      img.classList.add('hidden');
+      fallback.classList.add('hidden');
+
+      if (doc.fileData.startsWith('data:application/pdf')) {
+        iframe.src = doc.fileData;
+        iframe.classList.remove('hidden');
+      } else if (doc.fileData.startsWith('data:image/')) {
+        img.src = doc.fileData;
+        img.classList.remove('hidden');
+      } else {
+        fallback.classList.remove('hidden');
+      }
+
+      openModal('preview-modal');
+    }
+
+    async function downloadDocDirect(docId) {
+      const docs = await dbGetAll('documents');
+      const doc = docs.find(d => d.id === docId);
+      if (!doc || !doc.fileData) return;
+
+      const a = document.createElement('a');
+      a.href = doc.fileData;
+      a.download = doc.fileName || `${doc.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function openBackupModal() {
+      openModal('backup-modal');
+    }
+
+    async function exportAllData() {
+      const properties = await dbGetAll('properties');
+      const documents = await dbGetAll('documents');
+
+      const fullBackup = {
+        exportDate: new Date().toISOString(),
+        version: DB_VERSION,
+        properties: properties,
+        documents: documents
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullBackup, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `DomusDocs_Backup_${new Date().toISOString().split('T')[0]}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    async function handleRestoreData(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async function(event) {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (!imported.properties || !imported.documents) {
+            throw new Error('Formato backup non valido.');
+          }
+
+          if (!confirm(`Trovate ${imported.properties.length} case e ${imported.documents.length} documenti. Vuoi procedere con il ripristino? I dati attuali verranno integrati/aggiornati.`)) {
+            return;
+          }
+
+          for (const p of imported.properties) {
+            await dbPut('properties', p);
+          }
+          for (const d of imported.documents) {
+            await dbPut('documents', d);
+          }
+
+          alert('Ripristino completato con successo!');
+          closeModal('backup-modal');
+          await refreshAll();
+        } catch (err) {
+          alert('Errore durante la lettura del file di backup: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function formatDate(isoStr) {
+      if (!isoStr) return '';
+      const parts = isoStr.split('-');
+      if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      return isoStr;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
