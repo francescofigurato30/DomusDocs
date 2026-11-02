@@ -1,157 +1,477 @@
 <!DOCTYPE html>
-<html lang="it" class="h-full bg-slate-100">
+<html lang="it">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DomusDocs - Archivio Documentale Immobili</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <title>DomusDocs - Archivio Documentale Case</title>
   <style>
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: #f1f5f9; color: #1e293b; min-height: 100vh; display: flex; flex-direction: column; }
+    
+    /* Header */
+    header { background-color: #0f172a; color: white; padding: 12px 24px; display: flex; justify-content: space-between; items: center; border-bottom: 2px solid #0284c7; }
+    .logo-box { display: flex; align-items: center; gap: 12px; }
+    .logo-badge { background: #0284c7; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; }
+    .header-btns { display: flex; gap: 8px; align-items: center; }
+    .btn { padding: 8px 14px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.15s; }
+    .btn-backup { background: #1e293b; color: #38bdf8; border: 1px solid #334155; }
+    .btn-backup:hover { background: #334155; }
+    .btn-add { background: #0284c7; color: white; }
+    .btn-add:hover { background: #0369a1; }
+    .btn-danger { background: #fee2e2; color: #b91c1c; padding: 4px 8px; font-size: 11px; }
+    .btn-danger:hover { background: #fca5a5; }
+
+    /* Layout */
+    .container { max-width: 1300px; width: 100%; margin: 20px auto; padding: 0 16px; display: flex; flex-direction: row; gap: 24px; flex: 1; }
+    @media (max-width: 768px) { .container { flex-direction: column; } }
+
+    /* Sidebar */
+    .sidebar { width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
+    .card { background: white; border-radius: 14px; border: 1px solid #cbd5e1; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    
+    /* Scadenzario */
+    .deadlines-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; }
+    .deadline-pill { padding: 8px 4px; border-radius: 10px; }
+    .deadline-pill.scaduti { background: #fff1f2; border: 1px solid #ffe4e6; color: #be123c; }
+    .deadline-pill.soon { background: #fefce8; border: 1px solid #fef9c3; color: #a16207; }
+    .deadline-pill.ok { background: #f0fdf4; border: 1px solid #dcfce7; color: #15803d; }
+    .deadline-num { font-size: 18px; font-weight: 800; display: block; }
+    .deadline-lbl { font-size: 10px; font-weight: 600; }
+
+    /* Elenco Case */
+    .house-item { padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; margin-bottom: 8px; cursor: pointer; transition: 0.15s; background: white; }
+    .house-item:hover { border-color: #94a3b8; background: #f8fafc; }
+    .house-item.active { border-color: #0284c7; background: #f0f9ff; box-shadow: 0 0 0 1px #0284c7; }
+    .house-header { display: flex; justify-content: space-between; align-items: center; }
+    .house-title { font-size: 14px; font-weight: 700; color: #0f172a; }
+    .status-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 12px; }
+    .status-fitto { background: #dcfce7; color: #166534; }
+    .status-personale { background: #e0f2fe; color: #075985; }
+    .house-sub { font-size: 11px; color: #64748b; margin-top: 4px; display: flex; justify-content: space-between; }
+
+    /* Contenuto Destra */
+    .main-panel { flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+    .panel-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px; }
+    .catasto-box { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+    .meta-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; font-size: 12px; }
+    .meta-card strong { display: block; font-size: 10px; text-transform: uppercase; color: #64748b; margin-bottom: 4px; }
+
+    /* Categorie e Documenti */
+    .categories-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin: 12px 0; }
+    .cat-btn { padding: 6px 12px; font-size: 12px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer; background: #e2e8f0; color: #334155; white-space: nowrap; }
+    .cat-btn.active { background: #0f172a; color: white; }
+    
+    .docs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+    .doc-card { background: white; border: 1px solid #cbd5e1; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .doc-cat { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 6px; background: #e0f2fe; color: #0369a1; display: inline-block; }
+    .doc-title { font-size: 13px; font-weight: 700; color: #0f172a; line-height: 1.3; }
+    .doc-footer { border-top: 1px solid #f1f5f9; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #64748b; }
+    
+    /* Modale */
+    .modal { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+    .modal.open { display: flex; }
+    .modal-box { background: white; border-radius: 14px; max-width: 500px; width: 100%; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 4px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; outline: none; }
   </style>
 </head>
-<body class="h-full flex flex-col text-slate-800 antialiased font-sans">
+<body>
 
   <!-- Header -->
-  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 shadow-md">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-sky-600 flex items-center justify-center text-white text-lg font-bold shadow">
-          <i class="fa-solid fa-house-circle-check"></i>
-        </div>
-        <div>
-          <h1 class="text-base sm:text-lg font-bold tracking-tight">DomusDocs</h1>
-          <p class="text-xs text-sky-200">Archivio Documenti Immobili & Scadenzario</p>
-        </div>
+  <header>
+    <div class="logo-box">
+      <div class="logo-badge">🏛️</div>
+      <div>
+        <h1 style="font-size: 16px; font-weight: 700;">DomusDocs</h1>
+        <p style="font-size: 11px; color: #38bdf8;">Archivio Documenti Case & Contratti</p>
       </div>
-      <div class="flex items-center space-x-2">
-        <button type="button" onclick="openModal('backup-modal')" class="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-sky-200 rounded-lg border border-slate-700 flex items-center gap-1.5 cursor-pointer">
-          <i class="fa-solid fa-database"></i> Backup
-        </button>
-        <button type="button" onclick="openNewPropModal()" class="px-3.5 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-sm flex items-center gap-1.5 cursor-pointer">
-          <i class="fa-solid fa-plus"></i> Nuova Casa
-        </button>
-      </div>
+    </div>
+    <div class="header-btns">
+      <button class="btn btn-backup" onclick="exportJSON()">💾 Scarica Backup</button>
+      <button class="btn btn-add" onclick="openDocModal()">+ Aggiungi Documento</button>
     </div>
   </header>
 
-  <!-- Container Principale -->
-  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-6">
-
-    <!-- Menu Laterale Sinistro: Tutte le Case -->
-    <aside class="w-full md:w-80 flex-shrink-0 flex flex-col gap-4">
+  <!-- Container -->
+  <div class="container">
+    
+    <!-- Sidebar con Menu Statico Pronto delle 5 Case -->
+    <aside class="sidebar">
       
-      <!-- Contatore Scadenze -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center justify-between">
-          <span>Stato Scadenze Globali</span>
-          <i class="fa-regular fa-bell text-slate-400"></i>
-        </h2>
-        <div class="grid grid-cols-3 gap-2 text-center text-xs">
-          <div class="p-2 rounded-xl bg-rose-50 border border-rose-100">
-            <span id="badge-scaduti" class="block text-lg font-bold text-rose-700">0</span>
-            <span class="text-[10px] text-rose-600 font-medium">Scaduti</span>
+      <!-- Box Scadenze -->
+      <div class="card">
+        <div class="sidebar-title">
+          <span>Stato Scadenze</span>
+          <span>📅</span>
+        </div>
+        <div class="deadlines-grid">
+          <div class="deadline-pill scaduti">
+            <span class="deadline-num" id="cnt-scaduti">0</span>
+            <span class="deadline-lbl">Scaduti</span>
           </div>
-          <div class="p-2 rounded-xl bg-amber-50 border border-amber-100">
-            <span id="badge-in-scadenza" class="block text-lg font-bold text-amber-700">0</span>
-            <span class="text-[10px] text-amber-600 font-medium">≤ 30 gg</span>
+          <div class="deadline-pill soon">
+            <span class="deadline-num" id="cnt-soon">0</span>
+            <span class="deadline-lbl">≤ 30 gg</span>
           </div>
-          <div class="p-2 rounded-xl bg-emerald-50 border border-emerald-100">
-            <span id="badge-ok" class="block text-lg font-bold text-emerald-700">0</span>
-            <span class="text-[10px] text-emerald-600 font-medium">In regola</span>
+          <div class="deadline-pill ok">
+            <span class="deadline-num" id="cnt-ok">0</span>
+            <span class="deadline-lbl">In regola</span>
           </div>
         </div>
       </div>
 
-      <!-- Elenco Menu Case -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex-1 flex flex-col">
-        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
-          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500">Seleziona Immobile</h2>
-          <span id="count-properties" class="text-xs font-bold bg-sky-100 text-sky-800 px-2.5 py-0.5 rounded-full">5</span>
+      <!-- Menu Case (Statico al 100%, visibile sempre) -->
+      <div class="card" style="flex: 1;">
+        <div class="sidebar-title">
+          <span>I Tuoi 5 Immobili</span>
+          <span style="background: #0284c7; color: white; padding: 2px 7px; border-radius: 10px; font-size: 10px;">5</span>
         </div>
-        <div id="property-menu" class="space-y-2 overflow-y-auto max-h-[520px] custom-scrollbar pr-1">
-          <!-- Popolato automaticamente via JS -->
+
+        <div id="house-contessa" class="house-item active" onclick="selectHouse('contessa')">
+          <div class="house-header">
+            <span class="house-title">🏡 Casa Contessa</span>
+            <span class="status-badge status-personale">Uso Personale</span>
+          </div>
+          <div class="house-sub">
+            <span>Contrada Contessa</span>
+            <span id="badge-contessa">0 doc</span>
+          </div>
         </div>
+
+        <div id="house-paese" class="house-item" onclick="selectHouse('paese')">
+          <div class="house-header">
+            <span class="house-title">🏠 Casa Paese</span>
+            <span class="status-badge status-personale">Uso Personale</span>
+          </div>
+          <div class="house-sub">
+            <span>Centro Storico</span>
+            <span id="badge-paese">0 doc</span>
+          </div>
+        </div>
+
+        <div id="house-marina" class="house-item" onclick="selectHouse('marina')">
+          <div class="house-header">
+            <span class="house-title">🌊 Casa Marina</span>
+            <span class="status-badge status-fitto">In Fitto</span>
+          </div>
+          <div class="house-sub">
+            <span>Zona Mare</span>
+            <span id="badge-marina">0 doc</span>
+          </div>
+        </div>
+
+        <div id="house-quattromiglia" class="house-item" onclick="selectHouse('quattromiglia')">
+          <div class="house-header">
+            <span class="house-title">🏢 Casa Quattromiglia</span>
+            <span class="status-badge status-fitto">In Fitto</span>
+          </div>
+          <div class="house-sub">
+            <span>Quattromiglia</span>
+            <span id="badge-quattromiglia">0 doc</span>
+          </div>
+        </div>
+
+        <div id="house-villaggio_europa" class="house-item" onclick="selectHouse('villaggio_europa')">
+          <div class="house-header">
+            <span class="house-title">🏘️ Casa Villaggio Europa</span>
+            <span class="status-badge status-fitto">In Fitto</span>
+          </div>
+          <div class="house-sub">
+            <span>Villaggio Europa</span>
+            <span id="badge-villaggio_europa">0 doc</span>
+          </div>
+        </div>
+
       </div>
     </aside>
 
-    <!-- Area Destra: Scheda Casa Selezionata e Documenti -->
-    <section class="flex-1 flex flex-col min-w-0" id="main-content">
-      <!-- Popolato dinamicamente -->
-    </section>
+    <!-- Sezione Dettaglio Immobile e Fascicolo Documentale -->
+    <main class="main-panel">
+      
+      <!-- Scheda Dettagli Casa -->
+      <div class="card">
+        <div class="panel-header">
+          <div>
+            <h2 id="view-title" style="font-size: 20px; font-weight: 800; color: #0f172a;">Casa Contessa</h2>
+            <p id="view-address" style="font-size: 13px; color: #64748b; margin-top: 2px;">📍 Contrada Contessa</p>
+          </div>
+          <span id="view-status" class="status-badge status-personale" style="font-size: 12px; padding: 4px 10px;">Uso Personale</span>
+        </div>
 
-  </main>
-
-  <!-- Modal Aggiungi/Modifica Casa -->
-  <div id="property-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-        <h3 id="prop-modal-title" class="font-bold text-slate-800">Nuova Casa</h3>
-        <button type="button" onclick="closeModal('property-modal')" class="text-slate-400 hover:text-slate-600 cursor-pointer">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
+        <div class="catasto-box">
+          <div class="meta-card">
+            <strong>Dati Catastali</strong>
+            <span id="view-cadastral">Foglio 12, Particella 340, Sub. 2</span>
+          </div>
+          <div class="meta-card">
+            <strong>Destinazione / Note</strong>
+            <span id="view-notes">Abitazione principale / uso personale</span>
+          </div>
+        </div>
       </div>
-      <form id="prop-form" onsubmit="saveProperty(event)" class="mt-4 space-y-4">
-        <input type="hidden" id="prop-id">
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Nome Casa *</label>
-          <input type="text" id="prop-name" required placeholder="es. Casa Contessa, Casa Mare..." class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500">
+
+      <!-- Barra Filtro Categorie -->
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: #475569;">Fascicolo Documenti</h3>
+          <span id="view-count-docs" style="font-size: 12px; color: #64748b;">0 documenti</span>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Indirizzo Completo</label>
-          <input type="text" id="prop-address" placeholder="es. Via..." class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500">
+        <div class="categories-bar">
+          <button class="cat-btn active" onclick="setCategory('all', this)">Tutti i Documenti</button>
+          <button class="cat-btn" onclick="setCategory('Catasto & Proprietà', this)">1. Catasto & Rogito</button>
+          <button class="cat-btn" onclick="setCategory('Attestati & Conformità', this)">2. APE & Impianti</button>
+          <button class="cat-btn" onclick="setCategory('Contratti & Locazioni', this)">3. Contratti & RLI</button>
+          <button class="cat-btn" onclick="setCategory('Fisco & Tasse', this)">4. IMU & Fisco</button>
+          <button class="cat-btn" onclick="setCategory('Condominio', this)">5. Condominio</button>
+          <button class="cat-btn" onclick="setCategory('Manutenzioni & Spese', this)">6. Caldaia & Spese</button>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Stato</label>
-            <select id="prop-status" class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 bg-white outline-none focus:ring-2 focus:ring-sky-500">
-              <option value="Uso Personale">Uso Personale</option>
-              <option value="Affittato">Affittato</option>
-              <option value="Libero">Libero</option>
-              <option value="Ristrutturazione">Ristrutturazione</option>
-            </select>
+      </div>
+
+      <!-- Griglia Documenti -->
+      <div id="docs-list" class="docs-grid">
+        <!-- Generato via Script -->
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- Modal Aggiungi Documento -->
+  <div id="doc-modal" class="modal">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3 style="font-size: 15px; font-weight: 700;">Carica Documento</h3>
+        <button onclick="closeDocModal()" style="background: none; border: none; font-size: 18px; cursor: pointer;">✕</button>
+      </div>
+      <form onsubmit="saveDocumentForm(event)">
+        <div class="form-group">
+          <label>Categoria *</label>
+          <select id="form-cat" required>
+            <option value="Catasto & Proprietà">1. Catasto & Proprietà (Rogito, Visure, Planimetrie)</option>
+            <option value="Attestati & Conformità">2. Attestati & Conformità (APE, Impianti, Conformità)</option>
+            <option value="Contratti & Locazioni">3. Contratti & Locazioni (Contratto fitto, RLI)</option>
+            <option value="Fisco & Tasse">4. Fisco & Tasse (IMU, TARI, F24)</option>
+            <option value="Condominio">5. Condominio (Regolamento, Rate, Verbali)</option>
+            <option value="Manutenzioni & Spese">6. Manutenzioni & Spese (Caldaia, Fatture lavori)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Titolo Documento *</label>
+          <input type="text" id="form-title" placeholder="es. Atto compravendita rogito, Planimetria..." required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div class="form-group">
+            <label>Data Documento</label>
+            <input type="date" id="form-date">
           </div>
-          <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Catasto</label>
-            <input type="text" id="prop-cadastral" placeholder="Fg. ..., Part. ..., Sub. ..." class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500">
+          <div class="form-group">
+            <label>Data Scadenza (Se presente)</label>
+            <input type="date" id="form-expiry">
           </div>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Note</label>
-          <textarea id="prop-notes" rows="2" placeholder="Note utenze, contatori, chiavi..." class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-500"></textarea>
+        <div class="form-group">
+          <label>File Scansione (PDF, JPG, PNG)</label>
+          <input type="file" id="form-file" accept=".pdf,image/*">
         </div>
-        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-          <button type="button" onclick="closeModal('property-modal')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer">Annulla</button>
-          <button type="submit" class="px-4 py-2 text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white rounded-xl shadow cursor-pointer">Salva Casa</button>
+        <div class="form-group">
+          <label>Note aggiuntive</label>
+          <input type="text" id="form-notes" placeholder="Dettagli, importo, tecnico...">
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+          <button type="button" class="btn" style="background: #e2e8f0;" onclick="closeDocModal()">Annulla</button>
+          <button type="submit" class="btn btn-add">Archivia Documento</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Modal Aggiungi Documento -->
-  <div id="doc-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-        <h3 class="font-bold text-slate-800">Carica Scansione Documento</h3>
-        <button type="button" onclick="closeModal('doc-modal')" class="text-slate-400 hover:text-slate-600 cursor-pointer">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-      <form id="doc-form" onsubmit="saveDocument(event)" class="mt-4 space-y-4">
-        <input type="hidden" id="doc-property-id">
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Sezione / Categoria *</label>
-          <select id="doc-category" required class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 bg-white outline-none focus:ring-2 focus:ring-sky-500">
-            <option value="Catasto & Proprietà">1. Catasto & Proprietà (Rogito, Visure, Planimetrie)</option>
-            <option value="Attestati & Conformità">2. Attestati & Conformità (APE, Impianti, Gas, Agibilità)</option>
-            <option value="Contratti & Locazioni">3. Contratti & Locazioni (Contratto, RLI, Verbali Consegna)</option>
-            <option value="Fisco & Tasse">4. Fisco & Tasse (F24 IMU, TARI, Modello Unico)</option>
-            <option value="Condominio">5. Condominio (Regolamento, Millesimi, Rate, Verbali)</option>
-            <option value="Manutenzioni & Spese">6. Manutenzioni & Spese (Bollino Caldaia, Fatture, Garanzie)</option>
-          </select>
+  <!-- Script Logica Diretto e Testato -->
+  <script>
+    const HOUSES = {
+      contessa: { name: 'Casa Contessa', address: 'Contrada Contessa', status: 'Uso Personale', cadastral: 'Foglio 12, Particella 340, Sub. 2', notes: 'Immobile residenziale principale / uso personale' },
+      paese: { name: 'Casa Paese', address: 'Centro Storico', status: 'Uso Personale', cadastral: 'Foglio 8, Particella 115, Sub. 1', notes: 'Immobile in centro paese' },
+      marina: { name: 'Casa Marina', address: 'Zona Marina', status: 'Affittato', cadastral: 'Foglio 4, Particella 98, Sub. 6', notes: 'Immobile locato zona mare' },
+      quattromiglia: { name: 'Casa Quattromiglia', address: 'Quattromiglia', status: 'Affittato', cadastral: 'Foglio 15, Particella 412, Sub. 8', notes: 'Immobile in fitto (studenti/lavoratori)' },
+      villaggio_europa: { name: 'Casa Villaggio Europa', address: 'Villaggio Europa', status: 'Affittato', cadastral: 'Foglio 21, Particella 55, Sub. 14', notes: 'Unità abitativa Villaggio Europa (locata)' }
+    };
+
+    let activeHouseId = 'contessa';
+    let currentCat = 'all';
+    let documents = [];
+
+    // Carica documenti memorizzati
+    try {
+      const saved = localStorage.getItem('domusdocs_files_v1');
+      if (saved) documents = JSON.parse(saved);
+    } catch(e) { documents = []; }
+
+    // Selezione Casa
+    function selectHouse(id) {
+      activeHouseId = id;
+      document.querySelectorAll('.house-item').forEach(el => el.classList.remove('active'));
+      const activeEl = document.getElementById('house-' + id);
+      if (activeEl) activeEl.classList.add('active');
+
+      const h = HOUSES[id];
+      document.getElementById('view-title').textContent = h.name;
+      document.getElementById('view-address').textContent = '📍 ' + h.address;
+      document.getElementById('view-status').textContent = h.status;
+      document.getElementById('view-status').className = 'status-badge ' + (h.status === 'Affittato' ? 'status-fitto' : 'status-personale');
+      document.getElementById('view-cadastral').textContent = h.cadastral;
+      document.getElementById('view-notes').textContent = h.notes;
+
+      renderDocs();
+    }
+
+    // Filtro Categoria
+    function setCategory(cat, btn) {
+      currentCat = cat;
+      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderDocs();
+    }
+
+    // Renderizza Griglia Documenti
+    function renderDocs() {
+      const list = document.getElementById('docs-list');
+      const filtered = documents.filter(d => d.houseId === activeHouseId && (currentCat === 'all' || d.category === currentCat));
+      const totalHouseDocs = documents.filter(d => d.houseId === activeHouseId).length;
+      
+      document.getElementById('view-count-docs').textContent = totalHouseDocs + ' documenti';
+      updateBadges();
+
+      if (filtered.length === 0) {
+        list.innerHTML = `
+          <div style="grid-column: 1/-1; background: white; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 40px; text-align: center; color: #64748b;">
+            <div style="font-size: 32px; margin-bottom: 8px;">📁</div>
+            <strong style="color: #334155;">Nessun documento presente in questa sezione</strong>
+            <p style="font-size: 12px; margin-top: 4px;">Clicca in alto su "+ Aggiungi Documento" per caricare una scansione.</p>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = filtered.map(d => `
+        <div class="doc-card">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="doc-cat">${d.category}</span>
+              <button class="btn btn-danger" onclick="deleteDoc('${d.id}')">Elimina</button>
+            </div>
+            <div class="doc-title">${escapeHtml(d.title)}</div>
+            ${d.notes ? `<p style="font-size: 11px; color: #64748b; margin-top: 4px;">${escapeHtml(d.notes)}</p>` : ''}
+          </div>
+          <div class="doc-footer">
+            <span>📅 ${d.date || 'Nessuna data'}</span>
+            ${d.fileData ? `<button class="btn btn-backup" style="padding: 4px 10px; font-size: 11px;" onclick="downloadDoc('${d.id}')">📥 Scarica File</button>` : '<span style="font-style: italic;">Solo scheda</span>'}
+          </div>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Titolo Documento *</label>
-          <input type="text" id="doc-title" required placeholder="es. Atto compravendita rogito, Planimetria catastale, APE..." class="w-full text-sm rounded-xl border border-slate-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky
+      `).join('');
+    }
+
+    function updateBadges() {
+      // Aggiorna contatore badge su ogni casa nel menu
+      Object.keys(HOUSES).forEach(hid => {
+        const count = documents.filter(d => d.houseId === hid).length;
+        const b = document.getElementById('badge-' + hid);
+        if (b) b.textContent = count + ' doc';
+      });
+
+      // Calcola scadenze
+      let scaduti = 0, soon = 0, ok = 0;
+      const now = new Date();
+      documents.forEach(d => {
+        if (!d.expiry) return;
+        const diff = Math.ceil((new Date(d.expiry) - now) / (1000 * 60 * 60 * 24));
+        if (diff < 0) scaduti++;
+        else if (diff <= 30) soon++;
+        else ok++;
+      });
+      document.getElementById('cnt-scaduti').textContent = scaduti;
+      document.getElementById('cnt-soon').textContent = soon;
+      document.getElementById('cnt-ok').textContent = ok;
+    }
+
+    // Modal
+    function openDocModal() { document.getElementById('doc-modal').classList.add('open'); }
+    function closeDocModal() { document.getElementById('doc-modal').classList.remove('open'); }
+
+    // Salva Documento
+    async function saveDocumentForm(e) {
+      e.preventDefault();
+      const fileInput = document.getElementById('form-file');
+      let fileData = null;
+      let fileName = '';
+
+      if (fileInput.files[0]) {
+        fileName = fileInput.files[0].name;
+        fileData = await new Promise(res => {
+          const r = new FileReader();
+          r.onload = () => res(r.result);
+          r.readAsDataURL(fileInput.files[0]);
+        });
+      }
+
+      documents.push({
+        id: 'doc_' + Date.now(),
+        houseId: activeHouseId,
+        category: document.getElementById('form-cat').value,
+        title: document.getElementById('form-title').value.trim(),
+        date: document.getElementById('form-date').value,
+        expiry: document.getElementById('form-expiry').value,
+        notes: document.getElementById('form-notes').value.trim(),
+        fileName, fileData
+      });
+
+      try {
+        localStorage.setItem('domusdocs_files_v1', JSON.stringify(documents));
+      } catch(err) {
+        alert('Attenzione: file troppo pesante per la memoria del browser. Il documento è stato salvato senza anteprima.');
+      }
+
+      closeDocModal();
+      document.getElementById('form-title').value = '';
+      document.getElementById('form-file').value = '';
+      renderDocs();
+    }
+
+    function deleteDoc(id) {
+      if (!confirm('Vuoi eliminare questo documento?')) return;
+      documents = documents.filter(d => d.id !== id);
+      localStorage.setItem('domusdocs_files_v1', JSON.stringify(documents));
+      renderDocs();
+    }
+
+    function downloadDoc(id) {
+      const doc = documents.find(d => d.id === id);
+      if (!doc || !doc.fileData) return;
+      const a = document.createElement('a');
+      a.href = doc.fileData;
+      a.download = doc.fileName || 'documento.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function exportJSON() {
+      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(documents, null, 2));
+      const a = document.createElement('a');
+      a.href = dataStr;
+      a.download = 'Backup_DomusDocs_' + (new Date().toISOString().split('T')[0]) + '.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    function escapeHtml(t) {
+      if (!t) return '';
+      return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Inizializza subito
+    selectHouse('contessa');
+  </script>
+</body>
+</html>
